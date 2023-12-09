@@ -38,12 +38,6 @@ const transaction_schema = new mongoose.Schema({
 
 const Transaction = mongoose.model("transactions",transaction_schema);
 
-//necessary Data
-var total_money_send = 0;
-var total_money_receive = 0;
-var current_money_send = 0;
-var current_money_receive = 0;
-
 
 //Getting request for home page
 app.get("/", function(req, res){
@@ -61,8 +55,6 @@ app.get("/", function(req, res){
 
 //handling post request
 app.post("/send", function(req, res){
-    current_money_receive += Number(req.body.amount);
-    total_money_send += Number(req.body.amount);  
     const new_transaction = {
         amount: req.body.amount,
         operation: "Send",
@@ -70,12 +62,14 @@ app.post("/send", function(req, res){
     };
     Transaction.findOne({flag: "true"}).then(async (doc) => {
         var old_transactions = doc.transactions;
+        var old_current_money_receive = Number(doc.db_current_money_receive) + Number(req.body.amount);
+        var old_total_money_send = Number(doc. db_total_money_send) + Number(req.body.amount);
         old_transactions.push(new_transaction);
         const filter = { flag: "true" };
         const update = { 
             transactions: old_transactions,
-            db_current_money_receive: String(current_money_receive),
-            db_total_money_send: String(total_money_send)
+            db_current_money_receive: String(old_current_money_receive),
+            db_total_money_send: String(old_total_money_send)
         };
         await Transaction.updateOne(filter, update);
     });
@@ -84,8 +78,6 @@ app.post("/send", function(req, res){
 
 
 app.post("/receive", function(req, res){
-    current_money_send += Number(req.body.amount);
-    total_money_receive += Number(req.body.amount);
     const new_transaction = {
         amount: req.body.amount,
         operation: "Received",
@@ -93,12 +85,14 @@ app.post("/receive", function(req, res){
     };
     Transaction.findOne({flag: "true"}).then(async (doc) => {
         var old_transactions = doc.transactions;
+        var old_current_money_send = Number(doc.db_current_money_send) + Number(req.body.amount);
+        var old_total_money_receive = Number(doc.db_total_money_receive) + Number(req.body.amount);
         old_transactions.push(new_transaction);
         const filter = { flag: "true" };
         const update = { 
             transactions: old_transactions,
-            db_current_money_send: String(current_money_send),
-            db_total_money_receive: String(total_money_receive)
+            db_current_money_send: String(old_current_money_send),
+            db_total_money_receive: String(old_total_money_receive)
         };
         await Transaction.updateOne(filter, update);
     });
